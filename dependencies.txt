@@ -1,0 +1,6 @@
+sudo apt-get install dnsutils curl jq
+
+#32bit version
+wget http://stedolan.github.io/jq/download/linux32/jq && chmod +x jq && cp jq /usr/bin
+#64bit version
+wget http://stedolan.github.io/jq/download/linux64/jq && chmod +x jq && cp jq /usr/bin
