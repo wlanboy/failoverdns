@@ -1,0 +1,107 @@
+#!/bin/bash
+###########################################
+#Configuration
+###########################################
+domain="domain.com"
+recordId="#"
+cloudflarelogin="cloudflare-login"
+cloudflaretoken="cloudflare-token"
+###########################################
+#Files
+###########################################
+IFS=$'\n' read -d '' -r -a iplist < ~/ips
+IFS=$'\n' read -d '' -r -a results < ~/results
+###########################################
+statusweb=()
+statuspoints=()
+index=0
+echo "=================================="
+echo "check following ip list with nodeping"
+echo "${iplist[@]}"
+
+for i in ${iplist[@]}
+do
+    echo "=================================="
+	echo "checking $i" 
+	$(curl -m 5 ${results[index]} -o "./res${i}")
+	resultstring=$(cat "./res${i}")
+	statuspoints[index]=$(cat "./res${i}" | grep -Po '"m":.*?[^\\]",' | grep Success | wc -l)
+	resultstring=$(cat "./res${i}" | grep -Po '"m":.*?[^\\]",' | head -n 1)
+	if [ "${resultstring}"=="\"m\":\"Success\"," ]
+	then
+		statusweb[index]=1
+		  echo "================="
+		  echo "web ip is up"
+		  echo "================="		
+	else
+	    statusweb[index]=0
+		  echo "================="
+		  echo "web ip is down"
+		  echo "================="	
+	fi
+	echo " "
+	echo "status: ${statusweb[index]}"
+	echo "points: ${statuspoints[index]}"
+	echo " "
+	let index=index+1
+done
+
+max=0
+counter=0
+indexselectedip=0
+
+for point in ${statuspoints[@]}; do
+    if (( point > max && statusweb[counter] == 1 )); then 
+		max=$point
+		indexselectedip=$counter
+	fi
+	let counter=counter+1
+done
+
+parameterDomainList="-d a=rec_load_all -d tkn=${cloudflaretoken} -d email=${cloudflarelogin} -d z=${domain}"
+domaindata=$(curl https://www.cloudflare.com/api_json.html ${parameterDomainList} -o domainlist)
+key=$(cat domainlist | jq '.response.recs.objs[] | {name, rec_id} ' | cut -d ':' -f 2 | grep \" | sed 's/"//g' | sed 's/ //g' | sed 's/,//g' | tr '\n' ' ' )
+domainlist=( $key )
+echo "checking domainlist: ${domainlist[@]} with cloudflare"
+for ((i=1; i < ${#domainlist}; i++))
+do
+    echo "#${domainlist[$i]} ${i}"
+	if [[ "${domainlist[$i]}" == "${domain}" ]]
+	then
+	    let k=i-1
+	    recordId="${domainlist[$k]}"
+		echo "break for: ${recordId}"
+		break
+	fi
+	let i=i+1
+done
+
+echo " "
+echo "=================================="
+echo " "
+echo "update dns"
+echo " "
+		echo "=================================="
+		echo "Changing web DNS..."
+		oldip=$(dig +short ${domain} | head -n 1)
+		sleep 2
+		echo "current ip: ${oldip}"
+		echo "new     ip: ${iplist[$indexselectedip]} (points: ${statuspoints[$indexselectedip]})"
+		tester=${iplist[indexselectedip]}
+		echo "=================================="
+		if [[ "${tester}" == "${oldip}" ]]
+		then
+		  echo "================="
+		  echo "update not needed"
+		  echo "================="
+		else
+		  parameterDomainUpdate="-d act=rec_edit -d a=rec_edit -d tkn=${cloudflaretoken} -d id=${recordId} -d email=${cloudflarelogin} -d z=${domain} -d type=A -d name=${domain} -d content=${iplist[indexselectedip]} -d service_mode=1 -d ttl=1"
+		  cloudflareresponse=$(curl https://www.cloudflare.com/api_json.html ${parameterDomainUpdate})
+		  echo "response: ${cloudflareresponse}"
+		  echo "================="
+		  echo "update done"
+		  echo "================="		  
+		fi
+echo "=================================="
+echo "end of script"
+echo "=================================="
