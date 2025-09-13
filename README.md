@@ -116,3 +116,6 @@ TTL is the time to live of record in seconds. 1 is the value for the "Automatic"
 ```
 sudo apt-get install dnsutils curl jq
 ```
+
+## discussion
+see: https://vpsboard.com/threads/running-your-own-failover-dns-setup.3341/
