@@ -27,6 +27,7 @@ After the creation you have to click on the arrows on the right side to add your
 This will be your password to update the A record. [The values are not real - so don't try them.]
 
 Best addon it is working for AAAA (IPv6!) too:
+
 ![IPV6](ipv6.jpg)
 
 The update of the ip is simple:
