@@ -30,8 +30,10 @@ Best addon it is working for AAAA (IPv6!) too:
 ![IPV6](ipv6.jpg)
 
 The update of the ip is simple:
+```
 curl "https://dyn.dns.he.net/nic/update?hostname=dyn.example.com&password=password&myip=192.168.0.1"
 curl "https://dyn.dns.he.net/nic/update?hostname=dyn.example.com&password=password&myip=2001:db8:beef:cafe::1"
+```
 Just use curl to call a url.
 
 ## Write a short bash script that is managing everything
